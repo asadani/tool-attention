@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated benchmark artifacts
+code/catalog/tools.json
+code/catalog/schemas/
+code/catalog/queries.jsonl
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Build outputs
+*.pdf.bak
+paper.tex.bak
+
+# LaTeX build artifacts (PDF is kept)
+latex/*.aux
+latex/*.bbl
+latex/*.blg
+latex/*.log
+latex/*.out
+latex/*.toc
+latex/*.synctex.gz
+
+# Source research notes (excluded from public repo per author preference)
+LLM Tool Schema Optimization.md
+mcp_tax.pdf
+tokens-bloat.pdf
+
+# Claude Code local settings
+.claude/
