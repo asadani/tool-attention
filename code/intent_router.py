@@ -1,7 +1,7 @@
 """IntentRouter: query-to-tool semantic router with state-aware gating.
 
 Implements the Intent-Schema Overlap (ISO) score from
-"Tool Attention Is All You Need" (Sadani, 2026):
+"Tool Attention Is All You Need" (Anuj Sadani, 2026):
 
     ISO(q, t_i) = cos(phi(q), phi(s_i))
 

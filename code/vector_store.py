@@ -1,7 +1,7 @@
 """ToolVectorStore: FAISS-backed store of compact tool summaries.
 
 Companion code for "Tool Attention Is All You Need"
-(Sadani, 2026). Each summary must be a short natural-language
+(Anuj Sadani, 2026). Each summary must be a short natural-language
 sentence (<= 60 tokens under cl100k_base) that reads as a user
 intent (e.g., "Search GitHub issues by label and assignee").
 """
