@@ -1,9 +1,9 @@
 # Tool Attention — Reference Implementation
 
-Companion code for the arXiv preprint
+Companion code for the paper
 **"Tool Attention Is All You Need: Dynamic Tool Gating and Lazy Schema Loading for Eliminating the MCP/Tools Tax in Scalable Agentic Workflows"**
-(Sadani, 2026). See [`paper.md`](paper.md) for the Markdown version or
-[`latex/paper.pdf`](latex/paper.pdf) for the rendered preprint.
+(Sadani, 2026). Published on arXiv: [arxiv.org/abs/2604.21816](https://arxiv.org/abs/2604.21816).
+See [`paper.md`](paper.md) for the Markdown version or [`latex/paper.pdf`](latex/paper.pdf) for the rendered PDF.
 
 Tool Attention is a drop-in middleware layer for LLM agents that eliminates
 the *MCP Tax* — the 10k–60k tokens of tool-schema overhead that stateless
@@ -204,12 +204,12 @@ If you build on this work, please cite:
                   Scalable Agentic Workflows},
   author       = {Sadani, Anuj},
   year         = {2026},
-  eprint       = {arXiv:YYYY.NNNNN},
-  primaryClass = {cs.AI}
+  eprint       = {2604.21816},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url          = {https://arxiv.org/abs/2604.21816}
 }
 ```
-
-The arXiv ID will be filled in after submission.
 
 ---
 
