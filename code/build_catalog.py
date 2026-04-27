@@ -8,12 +8,14 @@ Produces:
 Numbers are chosen to match the per-server footprints reported in
 Table 2 of the paper. Deterministic under seed 42.
 """
+
 from __future__ import annotations
 
 import json
 import random
 import string
 from pathlib import Path
+
 
 SEED = 42
 HERE = Path(__file__).parent
@@ -22,21 +24,54 @@ SCHEMAS_DIR = OUT / "schemas"
 
 # (server, tool_count, avg_schema_tokens_target, verbs, objects, domain_noun)
 SERVERS = [
-    ("github", 30, 520, ["list", "get", "create", "close", "search", "comment"],
+    (
+        "github",
+        30,
+        520,
+        ["list", "get", "create", "close", "search", "comment"],
         ["pull_request", "issue", "repo", "branch", "commit", "workflow_run"],
-        "GitHub"),
-    ("filesystem", 10, 180, ["read", "write", "list", "search", "delete"],
-        ["file", "directory"], "the local filesystem"),
-    ("database", 20, 410, ["query", "describe", "insert", "update", "delete", "explain"],
+        "GitHub",
+    ),
+    (
+        "filesystem",
+        10,
+        180,
+        ["read", "write", "list", "search", "delete"],
+        ["file", "directory"],
+        "the local filesystem",
+    ),
+    (
+        "database",
+        20,
+        410,
+        ["query", "describe", "insert", "update", "delete", "explain"],
         ["customers", "orders", "invoices", "sessions", "events", "schema"],
-        "the primary OLTP database"),
-    ("slack", 15, 290, ["post", "read", "search", "list", "dm"],
-        ["channel", "thread", "user", "message"], "Slack"),
-    ("web", 10, 220, ["search", "fetch", "extract", "screenshot"],
-        ["page", "image", "snippet"], "the public web"),
-    ("jira", 35, 470, ["create", "list", "transition", "comment", "search", "link"],
+        "the primary OLTP database",
+    ),
+    (
+        "slack",
+        15,
+        290,
+        ["post", "read", "search", "list", "dm"],
+        ["channel", "thread", "user", "message"],
+        "Slack",
+    ),
+    (
+        "web",
+        10,
+        220,
+        ["search", "fetch", "extract", "screenshot"],
+        ["page", "image", "snippet"],
+        "the public web",
+    ),
+    (
+        "jira",
+        35,
+        470,
+        ["create", "list", "transition", "comment", "search", "link"],
         ["issue", "epic", "sprint", "project", "worklog", "component"],
-        "Jira"),
+        "Jira",
+    ),
 ]
 
 FILLER = (
@@ -47,9 +82,9 @@ FILLER = (
 )
 
 
-def _schema_blob(target_tokens: int, rnd: random.Random) -> dict:
+def _schema_blob(target_tokens: int, rnd: random.Random) -> dict[str, object]:
     """Build a JSON-Schema-shaped blob whose serialized size approximates target."""
-    props: dict[str, dict] = {}
+    props: dict[str, dict[str, object]] = {}
     required: list[str] = []
     approx_chars = target_tokens * 4  # cl100k ~4 chars/token
     i = 0
@@ -76,8 +111,8 @@ def build() -> None:
     rnd = random.Random(SEED)
     OUT.mkdir(exist_ok=True)
     SCHEMAS_DIR.mkdir(exist_ok=True)
-    tools: list[dict] = []
-    queries: list[dict] = []
+    tools: list[dict[str, object]] = []
+    queries: list[dict[str, str]] = []
     for server, count, avg_tok, verbs, objects, domain in SERVERS:
         for j in range(count):
             verb = rnd.choice(verbs)
@@ -91,18 +126,18 @@ def build() -> None:
                 "inputSchema": schema,
             }
             tools.append({"id": tid, "summary": summary, "full_schema": full})
-            (SCHEMAS_DIR / f"{tid}.json").write_text(json.dumps(full, indent=2))
+            _ = (SCHEMAS_DIR / f"{tid}.json").write_text(json.dumps(full, indent=2))
             if rnd.random() < 0.08:
                 queries.append({"text": summary})
 
-    (OUT / "tools.json").write_text(json.dumps(tools, indent=2))
+    _ = (OUT / "tools.json").write_text(json.dumps(tools, indent=2))
     with (OUT / "queries.jsonl").open("w") as f:
         for q in queries:
-            f.write(json.dumps(q) + "\n")
+            _ = f.write(json.dumps(q) + "\n")
 
-    print(f"wrote {len(tools)} tools -> {OUT/'tools.json'}")
+    print(f"wrote {len(tools)} tools -> {OUT / 'tools.json'}")
     print(f"wrote {len(tools)} schemas -> {SCHEMAS_DIR}")
-    print(f"wrote {len(queries)} sample queries -> {OUT/'queries.jsonl'}")
+    print(f"wrote {len(queries)} sample queries -> {OUT / 'queries.jsonl'}")
 
 
 if __name__ == "__main__":

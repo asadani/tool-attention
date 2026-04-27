@@ -11,10 +11,11 @@ summary pool plus Phase-2 full schemas for the routed active set.
 The `after_model` hook rejects tool calls for any tool that was not
 promoted this turn (hallucination gate).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable, Sequence
+from collections.abc import Callable, Sequence
 
 from intent_router import IntentRouter, RoutingResult
 from lazy_loader import LazySchemaLoader
@@ -27,7 +28,7 @@ class AttentionResult:
 
     active: list[RoutingResult] = field(default_factory=list)
     summaries_pool: dict[str, str] = field(default_factory=dict)
-    full_schemas: dict[str, dict] = field(default_factory=dict)
+    full_schemas: dict[str, dict[str, object]] = field(default_factory=dict)
     phase1_tokens: int = 0
     phase2_tokens: int = 0
 
@@ -50,10 +51,10 @@ class ToolAttention:
         router: IntentRouter,
         token_counter: Callable[[str], int],
     ) -> None:
-        self.store = store
-        self.loader = loader
-        self.router = router
-        self.count = token_counter
+        self.store: ToolVectorStore = store
+        self.loader: LazySchemaLoader = loader
+        self.router: IntentRouter = router
+        self.count: Callable[[str], int] = token_counter
 
     def before_model(
         self,
@@ -62,7 +63,7 @@ class ToolAttention:
     ) -> AttentionResult:
         """Compute the per-turn active set and assemble the two-phase payload."""
         active = self.router.route(query, precondition_check=precondition_check)
-        full_schemas: dict[str, dict] = {}
+        full_schemas: dict[str, dict[str, object]] = {}
         phase2 = 0
         for r in active:
             schema = self.loader.get(r.tool_id)
@@ -97,7 +98,8 @@ class ToolAttention:
         )
 
 
-def _stringify(schema: dict) -> str:
+def _stringify(schema: dict[str, object]) -> str:
     """Stable, deterministic string form for token accounting."""
     import json
+
     return json.dumps(schema, sort_keys=True, separators=(",", ":"))
