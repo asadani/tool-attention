@@ -209,10 +209,16 @@ class ToolVectorStore:
             )
 
     @classmethod
-    def load(cls, path: Path, dim: int = 384) -> "ToolVectorStore":
+    def load(
+        cls,
+        path: Path,
+        dim: int = 384,
+        collection_name: str = "tool_summaries",
+        persist_dir: str | None = ".chroma_db",
+    ) -> "ToolVectorStore":
         from chromadb.base_types import SparseVector
 
-        store = cls(dim=dim)
+        store = cls(dim=dim, collection_name=collection_name, persist_dir=persist_dir)
         if (path / "meta.json").exists():
             meta = cast(
                 dict[str, object],
@@ -240,7 +246,7 @@ class ToolVectorStore:
             embeddings = cast(list[list[float]], chroma_data["embeddings"])
             documents = cast(list[str], chroma_data["documents"])
             metadatas = cast(list[dict[str, object]], chroma_data["metadatas"])
-            store.collection.add(
+            store.collection.upsert(
                 ids=ids,
                 embeddings=cast(list[Sequence[float]], embeddings),
                 documents=documents,
