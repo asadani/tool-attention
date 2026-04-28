@@ -12,17 +12,19 @@ Outputs a Markdown-style comparison table to stdout. Requires the
 synthetic catalog at catalog/tools.json (generate via build_catalog.py
 if missing).
 """
+
 from __future__ import annotations
 
 import json
 import random
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
+from typing import cast
 
 try:
     import tiktoken
-except ImportError as e:  # pragma: no cover
+except ImportError:  # pragma: no cover
     print("missing dependency: pip install -r requirements.txt", file=sys.stderr)
     raise
 
@@ -46,20 +48,21 @@ def count(s: str) -> int:
     return len(ENC.encode(s))
 
 
-def naive_schema_tokens(tools: Iterable[dict]) -> int:
+def naive_schema_tokens(tools: Iterable[dict[str, object]]) -> int:
     return sum(count(json.dumps(t["full_schema"])) for t in tools)
 
 
 def main() -> int:
     if not CATALOG.exists():
         print(
-            f"missing catalog at {CATALOG}.\n"
-            f"Run `python build_catalog.py` to generate the synthetic 120-tool testbed.",
+            f"missing catalog at {CATALOG}.\nRun `python build_catalog.py` to generate the synthetic 120-tool testbed.",
             file=sys.stderr,
         )
         return 2
 
-    tools = json.loads(CATALOG.read_text())
+    tools: list[dict[str, object]] = cast(
+        list[dict[str, object]], json.loads(CATALOG.read_text())
+    )
     encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
     store = ToolVectorStore(dim=384)
     store.add_tools(tools, encoder)
@@ -69,7 +72,11 @@ def main() -> int:
 
     naive_total = naive_schema_tokens(tools)
 
-    queries = [json.loads(line) for line in QUERIES.open()] if QUERIES.exists() else []
+    queries: list[dict[str, str]] = (
+        [cast(dict[str, str], json.loads(line)) for line in QUERIES.open()]
+        if QUERIES.exists()
+        else []
+    )
     if not queries:
         queries = [
             {"text": "list open pull requests labeled bug in the auth repo"},
@@ -77,7 +84,9 @@ def main() -> int:
             {"text": "query the customers table for signups after 2026-01-01"},
         ]
 
-    phase1_vals, phase2_vals, retr_totals = [], [], []
+    phase1_vals: list[int] = []
+    phase2_vals: list[int] = []
+    retr_totals: list[int] = []
     for q in queries:
         r = ta.before_model(q["text"])
         phase1_vals.append(r.phase1_tokens)
@@ -98,11 +107,21 @@ def main() -> int:
     print(f"Catalog: {len(tools)} tools, {len(queries)} queries, seed={SEED}\n")
     print("| Method                              | tokens/turn |   reduction |")
     print("|-------------------------------------|------------:|------------:|")
-    print(f"| B1 Naive Full-Schema                | {naive_total:>11,} | {0.0:>10.1f}% |")
-    print(f"| B3 Simple Retrieval (top-k schemas) | {retr_mean:>11,.0f} | {100*(1-retr_mean/naive_total):>10.1f}% |")
-    print(f"| Tool Attention: Phase-1 only        | {phase1:>11,.0f} | {100*(1-phase1/naive_total):>10.1f}% |")
-    print(f"| Tool Attention: Phase-2 only        | {phase2:>11,.0f} | {100*(1-phase2/naive_total):>10.1f}% |")
-    print(f"| Tool Attention: first turn (P1+P2)  | {ta_total:>11,.0f} | {100*(1-ta_total/naive_total):>10.1f}% |")
+    print(
+        f"| B1 Naive Full-Schema                | {naive_total:>11,} | {0.0:>10.1f}% |"
+    )
+    print(
+        f"| B3 Simple Retrieval (top-k schemas) | {retr_mean:>11,.0f} | {100 * (1 - retr_mean / naive_total):>10.1f}% |"
+    )
+    print(
+        f"| Tool Attention: Phase-1 only        | {phase1:>11,.0f} | {100 * (1 - phase1 / naive_total):>10.1f}% |"
+    )
+    print(
+        f"| Tool Attention: Phase-2 only        | {phase2:>11,.0f} | {100 * (1 - phase2 / naive_total):>10.1f}% |"
+    )
+    print(
+        f"| Tool Attention: first turn (P1+P2)  | {ta_total:>11,.0f} | {100 * (1 - ta_total / naive_total):>10.1f}% |"
+    )
     print()
     print("Notes:")
     print("  * Phase-1 is the always-resident summary pool. It is stable across")

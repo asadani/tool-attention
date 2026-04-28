@@ -43,3 +43,6 @@ tokens-bloat.pdf
 
 # Claude Code local settings
 .claude/
+
+code/.chroma_db/
+.qodo

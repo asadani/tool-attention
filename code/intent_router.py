@@ -8,6 +8,7 @@ Implements the Intent-Schema Overlap (ISO) score from
 with a thresholded top-k gate and an optional precondition predicate
 that queries agent state to enforce auth scopes, milestones, etc.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -38,13 +39,13 @@ class IntentRouter:
         threshold: float = 0.28,
         top_k: int = 10,
     ) -> None:
-        self.store = store
-        self.encoder = encoder or SentenceTransformer(encoder_name)
-        self.threshold = threshold
-        self.top_k = top_k
+        self.store: ToolVectorStore = store
+        self.encoder: SentenceTransformer = encoder or SentenceTransformer(encoder_name)
+        self.threshold: float = threshold
+        self.top_k: int = top_k
 
     def embed_query(self, query: str) -> np.ndarray:
-        vec = self.encoder.encode(
+        vec = self.encoder.encode(  # pyright: ignore[reportUnknownMemberType]  # sentence-transformers overload stubs are incomplete
             [query], normalize_embeddings=True, show_progress_bar=False
         )
         return np.asarray(vec[0], dtype="float32")
@@ -59,7 +60,7 @@ class IntentRouter:
         """
         eq = self.embed_query(query)
         # Retrieve a wider slate so the precondition filter can't starve the gate.
-        slate = self.store.search(eq, k=max(self.top_k * 4, 20))
+        slate = self.store.search(eq, k=max(self.top_k * 4, 20), query_text=query)
         gated: list[RoutingResult] = []
         for tool_id, score in slate:
             if score < self.threshold:

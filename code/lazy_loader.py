@@ -5,12 +5,14 @@ IntentRouter has placed their tool in the active set for the
 current turn. Schemas can be loaded from disk, a remote HTTP
 endpoint, or any callable registered by the host.
 """
+
 from __future__ import annotations
 
 import json
 from collections import OrderedDict
 from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
+from typing import cast
 
 
 class LazySchemaLoader:
@@ -25,31 +27,32 @@ class LazySchemaLoader:
         self,
         registry_path: Path,
         capacity: int = 256,
-        fetcher: Callable[[str], dict] | None = None,
+        fetcher: Callable[[str], dict[str, object]] | None = None,
     ) -> None:
-        self.registry_path = Path(registry_path)
-        self.capacity = int(capacity)
-        self._fetcher = fetcher
-        self._cache: OrderedDict[str, dict] = OrderedDict()
+        self.registry_path: Path = Path(registry_path)
+        self.capacity: int = int(capacity)
+        self._fetcher: Callable[[str], dict[str, object]] | None = fetcher
+        self._cache: OrderedDict[str, dict[str, object]] = OrderedDict()
 
-    def get(self, tool_id: str) -> dict:
+    def get(self, tool_id: str) -> dict[str, object]:
         if tool_id in self._cache:
             self._cache.move_to_end(tool_id)
             return self._cache[tool_id]
         schema = (
-            self._fetcher(tool_id) if self._fetcher is not None
+            self._fetcher(tool_id)
+            if self._fetcher is not None
             else self._load_from_disk(tool_id)
         )
         self._cache[tool_id] = schema
         if len(self._cache) > self.capacity:
-            self._cache.popitem(last=False)
+            _ = self._cache.popitem(last=False)
         return schema
 
-    def _load_from_disk(self, tool_id: str) -> dict:
+    def _load_from_disk(self, tool_id: str) -> dict[str, object]:
         path = self.registry_path / f"{tool_id}.json"
         if not path.exists():
             raise KeyError(f"no schema registered for tool {tool_id!r}")
-        return json.loads(path.read_text())
+        return cast(dict[str, object], json.loads(path.read_text()))
 
     def clear(self) -> None:
         self._cache.clear()
